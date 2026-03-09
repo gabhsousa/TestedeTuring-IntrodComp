@@ -31,7 +31,7 @@ def carregarApiKey():
 model, apiFuncionando = carregarApiKey()
 
 # Configuracao do jogo
-PROB_IA = 0.6   
+PROB_IA = 0.5 
 
 TEMAS_IA = [
     "os labirintos da mente humana",
@@ -70,31 +70,48 @@ def gerarHumano(textosUsados: list) -> dict:
     time.sleep(random.uniform(3.0, 7.0))
     return getFraseHumanaAleatoria(textosUsados)
 
-def gerarIa(api_key) -> dict:
+def gerarIa(api_key, textosUsados: list) -> dict:
+    inicio_requisicao = time.time()
+    
     tema = random.choice(TEMAS_IA)
-    exemplos = getFrasesEficazes(limit=4)
+    exemplos = getFrasesEficazes(limit=5)
 
     if exemplos:
         blocoExemplos = "\n".join(f'- "{e}"' for e in exemplos)
         instrucaoExemplos = (
-            f"Aqui estao frases que ja foram confundidas com frases humanas:\n"
+            f"Aqui estao frases curtas que ja foram confundidas com frases humanas:\n"
             f"{blocoExemplos}\n\n"
-            "Escreva uma nova frase no mesmo estilo e nivel de qualidade."
-        )
+            "Escreva uma nova frase no mesmo estilo, nivel de qualidade e comprimento restrito."
+    )
     else:
-        instrucaoExemplos = "Escreva uma frase poetica e filosofica que pareca escrita por um pensador humano classico."
+        instrucaoExemplos = "Escreva um aforismo filosofico curto e impactante que pareca escrito por um pensador humano classico."
+
+    restricaoRepeticao = ""
+    if textosUsados:
+        ultimosUsados = textosUsados[-5:] 
+        blocoUsados = "\n".join(f'- "{u}"' for u in ultimosUsados)
+        restricaoRepeticao = (
+            f"\n\nATENCAO - REGRA RESTRITA:\n"
+            f"Voce NAO PODE gerar nenhuma destas frases abaixo (elas ja foram usadas recentemente):\n"
+            f"{blocoUsados}"
+        )
 
     prompt = (
-        f"{instrucaoExemplos}\n\n"
+        f"{instrucaoExemplos}{restricaoRepeticao}\n\n"
         f"Tema: {tema}\n"
-        "Requisitos: maximo 15 palavras, sem aspas, sem emojis, sem hashtags. "
-        "Responda apenas com a frase, nada mais."
+        "Requisitos: Seja extremamente conciso. A frase deve ser um aforismo contendo entre 8 a 12 palavras no maximo. "
+        "Sem aspas, sem emojis, sem hashtags. Responda apenas com a frase, nada mais."
     )
 
     payload = {
         "contents": [{"parts": [{"text": prompt}]}],
-        "generationConfig": {"temperature": 0.7, "maxOutputTokens": 100},
+        "generationConfig": {
+            "temperature": 0.90,
+            "maxOutputTokens": 80
+        },
     }
+    
+    resultado_final = None
     try:
         resp = requests.post(
             GEMMA_URL,
@@ -104,14 +121,22 @@ def gerarIa(api_key) -> dict:
         )
         resp.raise_for_status()
         texto = resp.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
-        return {"texto": texto, "origem": "ia", "autor": "Gemma", "usado": None, "tema": tema}
+        
+        resultado_final = {"texto": texto, "origem": "ia", "autor": "Gemma", "usado": texto, "tema": tema}
     except Exception as e:
-        return {"texto": f"[ERRO API: {e}]",
-                "origem": "ia", "autor": "IA (Erro)", "usado": None, "tema": tema}
+        resultado_final = {"texto": f"[ERRO API: {e}]", "origem": "ia", "autor": "IA (Erro)", "usado": None, "tema": tema}
+
+    tempo_decorrido = time.time() - inicio_requisicao
+    tempo_alvo = random.uniform(3.0, 7.0)
+    
+    if tempo_decorrido < tempo_alvo:
+        time.sleep(tempo_alvo - tempo_decorrido)
+        
+    return resultado_final
 
 def gerarSincrono(textosUsados: list) -> dict:
     usarIa = random.random() < PROB_IA and apiFuncionando
-    return gerarIa(model) if usarIa else gerarHumano(textosUsados)
+    return gerarIa(model, textosUsados) if usarIa else gerarHumano(textosUsados)
 
 def iniciarPrefetch():
     usarIa = random.random() < PROB_IA and apiFuncionando
@@ -123,15 +148,13 @@ def iniciarPrefetch():
 
     def worker():
         try:
-            q = gerarIa(modeloRef) if usarIa else gerarHumano(snapshot)
+            q = gerarIa(modeloRef, snapshot) if usarIa else gerarHumano(snapshot)
             container["resultado"] = q
         except Exception as e:
             print(f"[Thread Error] Falha ao gerar frase: {e}")
         finally:
-            # Garante que o evento sempre seja liberado
             evento.set()
 
-    # Cria a thread, injeta o contexto do Streamlit nela, e inicia
     thread = threading.Thread(target=worker, daemon=True)
     add_script_run_ctx(thread)
     thread.start()
@@ -187,12 +210,12 @@ def responder(escolha: str):
         )
 
     st.session_state.feedback = {"acertou": acertou, "autor": autor}
-    st.session_state.rodada  += 1
-
-    if st.session_state.rodada > 10:
-        st.session_state.fase = "fim"
-    else:
-        st.session_state.fase = "feedback"
+    
+    # Apenas muda a fase, sem incrementar a rodada ainda
+    st.session_state.fase = "feedback"
+    
+    # Inicia o prefetch apenas se nao for a ultima rodada
+    if st.session_state.rodada < 10:
         iniciarPrefetch()
 
 # Header
@@ -274,10 +297,16 @@ elif fase == "feedback":
     else:
         st.error(f"Errou! Na verdade foi escrito por: {fb['autor']}.")
 
-    if st.button("Próxima frase", type="primary"):
-        st.session_state.questaoAtual = consumirPrefetch()
-        st.session_state.feedback      = None
-        st.session_state.fase          = "jogando"
+    texto_botao = "Ver Resultado Final" if st.session_state.rodada >= 10 else "Próxima frase"
+
+    if st.button(texto_botao, type="primary"):
+        if st.session_state.rodada >= 10:
+            st.session_state.fase = "fim"
+        else:
+            st.session_state.rodada += 1
+            st.session_state.questaoAtual = consumirPrefetch()
+            st.session_state.feedback      = None
+            st.session_state.fase          = "jogando"
         st.rerun()
 
 elif fase == "fim":

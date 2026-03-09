@@ -65,7 +65,7 @@ def getFrasesEficazes(limit: int = 5) -> list[str]:
         db = getClient()
         resp = db.table("frases_eficazes")\
             .select("texto")\
-            .order("vezes_enganou", desc=True)\
+            .order("id", desc=True)\
             .limit(limit)\
             .execute()
         return [row["texto"] for row in resp.data]
