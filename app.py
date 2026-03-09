@@ -2,15 +2,15 @@ import streamlit as st
 
 # CONFIGURACAO INICIAL
 st.set_page_config(
-    page_title="Desafio de Turing | Humano ou IA?",
+    page_title="Captcha Filosófico | Humano ou IA?",
     layout="centered",
     initial_sidebar_state="expanded",
     menu_items={
         "Get help": None,
         "Report a bug": None,
         "About": (
-            "**Desafio de Turing** — Voce consegue distinguir a mente humana "
-            "de uma Inteligencia Artificial? Descubra aqui."
+            "**Captcha Filosófico** — Você consegue distinguir a mente humana "
+            "de uma Inteligência Artificial? Descubra aqui."
         ),
     },
 )
@@ -117,21 +117,22 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+paginaIA = st.Page("genAi.py", title="IA Generativa")
 paginaHome = st.Page("home.py", title="O Teste de Turing", default=True)
 paginaJogo = st.Page("frases.py", title="Humano ou IA?")
 
-pg = st.navigation([paginaHome, paginaJogo], position="hidden")
+pg = st.navigation([paginaIA, paginaHome, paginaJogo], position="hidden")
 
 with st.sidebar:
     st.markdown(
         """
         <h2 style='font-family:"Syne",sans-serif;font-weight:800;
                    letter-spacing:-0.02em;margin-bottom:0;color:#e8e8f0;'>
-            DESAFIO<br>DE TURING
+            CAPTCHA<br>FILOSÓFICO
         </h2>
         <p style='font-size:0.75rem;color:#888899;margin-top:0.3rem;
                   font-family:"Space Mono",monospace;'>
-            — voce consegue distinguir?
+            — você consegue distinguir?
         </p>
         """,
         unsafe_allow_html=True,
@@ -140,16 +141,17 @@ with st.sidebar:
 
     st.markdown(
         "<p style='font-size:0.8rem;color:#888899;line-height:1.6;'>"
-        "Simulacao do Teste de Turing explorando a fronteira entre a "
-        "mente humana e a Inteligencia Artificial."
+        "Simulação do Teste de Turing explorando a fronteira entre a "
+        "mente humana e a Inteligência Artificial."
         "</p>",
         unsafe_allow_html=True,
     )
     st.divider()
 
+    st.page_link(paginaIA, label="IA Generativa")
     st.page_link(paginaHome, label="O Teste de Turing")
     st.page_link(paginaJogo, label="Humano ou IA?")
-
+    
     st.divider()
 
     st.markdown(
@@ -158,11 +160,11 @@ with st.sidebar:
         unsafe_allow_html=True,
     )
     membros = [
-        "Joao Pedro da Silva Araujo",
+        "João Pedro da Silva Araújo",
         "Tarsis Lima Gomes da Silva",
-        "Alefe Brito Monteiro",
+        "Álefe Brito Monteiro",
         "Gabriel Henrique Cavalcante de Sousa",
-        "Antonio Jose Batista Salazar",
+        "António José Batista Salazar",
     ]
     for m in membros:
         st.markdown(

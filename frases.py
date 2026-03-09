@@ -10,7 +10,7 @@ from database import registrarResultado, registrarFraseEficaz, getFrasesEficazes
 st.markdown(
     """
     <meta name="description"
-          content="Joguinho das Frases: descubra se a frase foi escrita por um humano ou uma IA. Parte do Desafio de Turing." />
+          content="Joguinho das Frases: descubra se a frase foi escrita por um humano ou uma IA. Parte do Captcha Filosófico." />
     <meta name="robots" content="index, follow" />
     """,
     unsafe_allow_html=True,
@@ -200,7 +200,7 @@ st.markdown(
     """
     <h1 style='font-family:"Syne",sans-serif;font-weight:800;
                letter-spacing:-0.03em;font-size:2.4rem;margin-bottom:0;'>
-        DESAFIO DE TURING
+        CAPTCHA FILOSÓFICO
     </h1>
     <p style='font-size:0.8rem;color:#888899;font-family:"Space Mono",monospace;
               margin-top:0.2rem;margin-bottom:1.5rem;'>
@@ -232,7 +232,7 @@ elif fase == "jogando":
 
     colRodada, colPontos = st.columns(2)
     colRodada.metric("Rodada", f"{st.session_state.rodada} / 10")
-    colPontos.metric("Pontuacao", st.session_state.pontos)
+    colPontos.metric("Pontuação", st.session_state.pontos)
     st.divider()
 
     st.markdown(
@@ -258,14 +258,14 @@ elif fase == "jogando":
             responder("humano")
             st.rerun()
     with col2:
-        if st.button("Inteligencia Artificial", use_container_width=True, type="primary", key="btnIa"):
+        if st.button("Inteligência Artificial", use_container_width=True, type="primary", key="btnIa"):
             responder("ia")
             st.rerun()
 
 elif fase == "feedback":
     colRodada, colPontos = st.columns(2)
     colRodada.metric("Rodada", f"{st.session_state.rodada} / 10")
-    colPontos.metric("Pontuacao", st.session_state.pontos)
+    colPontos.metric("Pontuação", st.session_state.pontos)
     st.divider()
 
     fb = st.session_state.feedback
@@ -274,7 +274,7 @@ elif fase == "feedback":
     else:
         st.error(f"Errou! Na verdade foi escrito por: {fb['autor']}.")
 
-    if st.button("Proxima frase", type="primary"):
+    if st.button("Próxima frase", type="primary"):
         st.session_state.questaoAtual = consumirPrefetch()
         st.session_state.feedback      = None
         st.session_state.fase          = "jogando"
@@ -288,7 +288,7 @@ elif fase == "fim":
                     border-radius:4px;padding:2rem;text-align:center;margin:1rem 0;'>
             <p style='font-size:0.75rem;color:#888899;text-transform:uppercase;
                       letter-spacing:0.12em;font-family:"Space Mono",monospace;'>
-                Pontuacao Final
+                Pontuação Final
             </p>
             <p style='font-size:3.5rem;font-family:"Syne",sans-serif;
                       font-weight:800;color:#00e5ff;margin:0;line-height:1;'>
@@ -299,7 +299,6 @@ elif fase == "fim":
         unsafe_allow_html=True,
     )
     if pontos == 10:
-        st.balloons()
         st.success("Perfeito! A máquina não conseguiu te enganar.")
     elif pontos >= 7:
         st.warning("Bom resultado, mas a IA ainda conseguiu te enganar algumas vezes.")
